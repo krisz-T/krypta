@@ -41,4 +41,4 @@ Each vault is protected using **AES-256 encryption** with PBKDF2 key derivation.
 ---
 
 ## License
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE.txt).
