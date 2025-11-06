@@ -36,7 +36,7 @@ Each vault is protected using **AES-256 encryption** with PBKDF2 key derivation.
 ---
 
 ## Documentation
-📄 [Full Project Report (PDF)](Documentation/Krypta_Documentation.pdf)
+[Full Project Report (PDF)](Documentation/Krypta.pdf)
 
 ---
 
