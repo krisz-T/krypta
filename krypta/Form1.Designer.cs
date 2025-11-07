@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
@@ -48,6 +49,12 @@
             checkBoxShowPasswords = new CheckBox();
             textBoxSearch = new TextBox();
             dataGridView1 = new DataGridView();
+            contextMenuEntry = new ContextMenuStrip(components);
+            copyUsernameToolStripMenuItem = new ToolStripMenuItem();
+            copyPasswordToolStripMenuItem = new ToolStripMenuItem();
+            generatePasswordToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            deleteEntryToolStripMenuItem = new ToolStripMenuItem();
             tableLayoutPanel1 = new TableLayoutPanel();
             buttonGeneratePassword = new Button();
             checkBoxStrengthMeter = new CheckBox();
@@ -57,6 +64,7 @@
             toolStripStatusLabelLock = new ToolStripStatusLabel();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            contextMenuEntry.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -211,13 +219,54 @@
             // 
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             tableLayoutPanel1.SetColumnSpan(dataGridView1, 4);
+            dataGridView1.ContextMenuStrip = contextMenuEntry;
             dataGridView1.Dock = DockStyle.Fill;
             dataGridView1.Location = new Point(8, 37);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.Size = new Size(784, 381);
             dataGridView1.TabIndex = 4;
             dataGridView1.CellFormatting += dataGridView1_CellFormatting;
+            dataGridView1.CellMouseDown += dataGridView1_CellMouseDown;
             dataGridView1.KeyDown += dataGridView1_KeyDown;
+            // 
+            // contextMenuEntry
+            // 
+            contextMenuEntry.Items.AddRange(new ToolStripItem[] { copyUsernameToolStripMenuItem, copyPasswordToolStripMenuItem, generatePasswordToolStripMenuItem, toolStripSeparator2, deleteEntryToolStripMenuItem });
+            contextMenuEntry.Name = "contextMenuEntry";
+            contextMenuEntry.Size = new Size(175, 98);
+            // 
+            // copyUsernameToolStripMenuItem
+            // 
+            copyUsernameToolStripMenuItem.Name = "copyUsernameToolStripMenuItem";
+            copyUsernameToolStripMenuItem.Size = new Size(174, 22);
+            copyUsernameToolStripMenuItem.Text = "Copy username";
+            copyUsernameToolStripMenuItem.Click += copyUsernameToolStripMenuItem_Click;
+            // 
+            // copyPasswordToolStripMenuItem
+            // 
+            copyPasswordToolStripMenuItem.Name = "copyPasswordToolStripMenuItem";
+            copyPasswordToolStripMenuItem.Size = new Size(174, 22);
+            copyPasswordToolStripMenuItem.Text = "Copy password";
+            copyPasswordToolStripMenuItem.Click += copyPasswordToolStripMenuItem_Click;
+            // 
+            // generatePasswordToolStripMenuItem
+            // 
+            generatePasswordToolStripMenuItem.Name = "generatePasswordToolStripMenuItem";
+            generatePasswordToolStripMenuItem.Size = new Size(174, 22);
+            generatePasswordToolStripMenuItem.Text = "Generate password";
+            generatePasswordToolStripMenuItem.Click += generatePasswordToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator2
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new Size(171, 6);
+            // 
+            // deleteEntryToolStripMenuItem
+            // 
+            deleteEntryToolStripMenuItem.Name = "deleteEntryToolStripMenuItem";
+            deleteEntryToolStripMenuItem.Size = new Size(174, 22);
+            deleteEntryToolStripMenuItem.Text = "Delete entry";
+            deleteEntryToolStripMenuItem.Click += deleteEntryToolStripMenuItem_Click;
             // 
             // tableLayoutPanel1
             // 
@@ -296,7 +345,6 @@
             // 
             // toolStripStatusLabelLock
             // 
-            toolStripStatusLabelLock.AutoSize = false;
             toolStripStatusLabelLock.Name = "toolStripStatusLabelLock";
             toolStripStatusLabelLock.Size = new Size(95, 17);
             toolStripStatusLabelLock.Text = "Status: Unlocked";
@@ -322,6 +370,7 @@
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            contextMenuEntry.ResumeLayout(false);
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
             statusStrip1.ResumeLayout(false);
@@ -358,5 +407,11 @@
         private ToolStripMenuItem helpToolStripMenuItem;
         private ToolStripMenuItem aboutToolStripMenuItem;
         private ToolStripMenuItem findToolStripMenuItem;
+        private ContextMenuStrip contextMenuEntry;
+        private ToolStripMenuItem copyUsernameToolStripMenuItem;
+        private ToolStripMenuItem copyPasswordToolStripMenuItem;
+        private ToolStripMenuItem generatePasswordToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem deleteEntryToolStripMenuItem;
     }
 }

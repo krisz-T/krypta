@@ -16,6 +16,7 @@ namespace krypta
         private bool _isDirty = false;
         private bool _isLocked = false;
         private bool _suppressAutoLock = false;
+        private string _currentMasterPassword = null;
 
         public Form1()
         {
@@ -81,6 +82,7 @@ namespace krypta
             _currentFilePath = null;
             _isDirty = false;
             _isLocked = false;
+            _currentMasterPassword = null;
             UpdateTitle();
             UpdateStatusBar();
         }
@@ -174,20 +176,31 @@ namespace krypta
             BindVaultToGrid();
             _currentFilePath = path;
             _isDirty = false;
-            _isLocked = false;          // loaded and unlocked
+            _isLocked = false;
+
+            _currentMasterPassword = password;   // <-- remember the correct master
+
             UpdateTitle();
             UpdateStatusBar();
         }
 
         private void SaveVault(string path)
         {
-            string password = PromptForPassword("Set or confirm vault password:");
-            if (password == null)
-                return; // user cancelled
+            // If we don't yet have a master password (brand new vault), ask to set one
+            if (string.IsNullOrEmpty(_currentMasterPassword))
+            {
+                string newPassword = PromptForNewMasterPassword();
+                if (newPassword == null)
+                    return; // user cancelled
 
-            VaultFileService.Save(path, _vault, password);
+                _currentMasterPassword = newPassword;
+            }
+
+            // Use the current master password to encrypt and save
+            VaultFileService.Save(path, _vault, _currentMasterPassword);
             _currentFilePath = path;
             _isDirty = false;
+
             UpdateTitle();
             UpdateStatusBar();
         }
@@ -286,6 +299,8 @@ namespace krypta
             checkBoxShowPasswords.Checked = false;
             _isDirty = false;
 
+            _currentMasterPassword = null;
+
             UpdateTitle();
             UpdateStatusBar();
         }
@@ -313,6 +328,108 @@ namespace krypta
                 UpdateTitle();
             }
         }
+
+        private string PromptForNewMasterPassword()
+        {
+            using (var form = new Form())
+            {
+                form.Text = "Krypta - Set Master Password";
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.FormBorderStyle = FormBorderStyle.FixedDialog;
+                form.MinimizeBox = false;
+                form.MaximizeBox = false;
+                form.ClientSize = new Size(320, 160);
+
+                var label1 = new Label
+                {
+                    Left = 10,
+                    Top = 10,
+                    Text = "Enter new master password:",
+                    AutoSize = true
+                };
+
+                var textBox1 = new TextBox
+                {
+                    Left = 10,
+                    Top = 30,
+                    Width = 290,
+                    PasswordChar = '•'
+                };
+
+                var label2 = new Label
+                {
+                    Left = 10,
+                    Top = 60,
+                    Text = "Confirm master password:",
+                    AutoSize = true
+                };
+
+                var textBox2 = new TextBox
+                {
+                    Left = 10,
+                    Top = 80,
+                    Width = 290,
+                    PasswordChar = '•'
+                };
+
+                var okButton = new Button
+                {
+                    Text = "OK",
+                    Left = 145,
+                    Width = 75,
+                    Top = 115
+                };
+
+                var cancelButton = new Button
+                {
+                    Text = "Cancel",
+                    Left = 230,
+                    Width = 75,
+                    Top = 115,
+                    DialogResult = DialogResult.Cancel
+                };
+
+                // Validation logic for OK
+                okButton.Click += (s, e) =>
+                {
+                    if (string.IsNullOrEmpty(textBox1.Text))
+                    {
+                        MessageBox.Show(form,
+                            "Master password cannot be empty.",
+                            "Krypta",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    if (textBox1.Text != textBox2.Text)
+                    {
+                        MessageBox.Show(form,
+                            "Passwords do not match.",
+                            "Krypta",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    form.DialogResult = DialogResult.OK;
+                    form.Close();
+                };
+
+                form.Controls.AddRange(new Control[] { label1, textBox1, label2, textBox2, okButton, cancelButton });
+                form.AcceptButton = okButton;
+                form.CancelButton = cancelButton;
+
+                var result = form.ShowDialog(this);
+                if (result == DialogResult.OK)
+                {
+                    return textBox1.Text;
+                }
+
+                return null; // user cancelled
+            }
+        }
+
 
         private string GeneratePassword(int length = 16)
         {
@@ -541,76 +658,7 @@ namespace krypta
 
         private void buttonGeneratePassword_Click(object sender, EventArgs e)
         {
-            // Make sure there’s a valid row selected
-            if (dataGridView1.CurrentRow == null || dataGridView1.CurrentRow.IsNewRow)
-            {
-                _suppressAutoLock = true;
-                try
-                {
-                    MessageBox.Show(this,
-                        "Select an existing row to generate a password into.",
-                        "Krypta",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
-                finally
-                {
-                    _suppressAutoLock = false;
-                }
-                return;
-            }
-
-            var entry = dataGridView1.CurrentRow.DataBoundItem as PasswordEntry;
-            if (entry == null)
-            {
-                _suppressAutoLock = true;
-                try
-                {
-                    MessageBox.Show(this,
-                        "No valid entry is selected.",
-                        "Krypta",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                }
-                finally
-                {
-                    _suppressAutoLock = false;
-                }
-                return;
-            }
-
-            // Generate a new password
-            string password = GeneratePassword(16); // change 16 for different length
-            entry.Password = password;
-
-            // Mark document as modified and refresh grid so masking updates
-            MarkDirty();
-            dataGridView1.Refresh();
-
-            // Try copying to clipboard
-            try
-            {
-                Clipboard.SetText(password);
-            }
-            catch
-            {
-                // ignore clipboard errors
-            }
-
-            // Show success message without triggering auto-lock
-            _suppressAutoLock = true;
-            try
-            {
-                MessageBox.Show(this,
-                    "New password generated and copied to clipboard.",
-                    "Krypta",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-            }
-            finally
-            {
-                _suppressAutoLock = false;
-            }
+            GeneratePasswordForSelectedEntry();
         }
 
         private void UpdateStatusBar()
@@ -704,8 +752,11 @@ namespace krypta
         {
             if (!ConfirmSaveIfDirty())
             {
-                e.Cancel = true; // stop closing
+                e.Cancel = true;
+                return;
             }
+
+            _currentMasterPassword = null;
         }
 
         private void toolStripStatusLabelLock_Click(object sender, EventArgs e)
@@ -715,6 +766,69 @@ namespace krypta
             {
                 UnlockVault();
             }
+        }
+
+        private void GeneratePasswordForSelectedEntry()
+        {
+            var entry = GetSelectedEntry();
+            if (entry == null)
+                return;
+
+            bool hasExistingPassword = !string.IsNullOrEmpty(entry.Password);
+
+            // If there's already a password, ask before replacing
+            if (hasExistingPassword)
+            {
+                _suppressAutoLock = true;
+                try
+                {
+                    var result = MessageBox.Show(this,
+                        "This entry already has a password.\nDo you want to replace it?",
+                        "Krypta",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (result != DialogResult.Yes)
+                        return;
+                }
+                finally
+                {
+                    _suppressAutoLock = false;
+                }
+            }
+
+            // Generate a new password
+            string password = GeneratePassword(16); // or whatever length you prefer
+            entry.Password = password;
+            MarkDirty();
+            dataGridView1.Refresh();
+
+            // Try copying to clipboard
+            try
+            {
+                Clipboard.SetText(password);
+            }
+            catch
+            {
+                // ignore clipboard errors
+            }
+
+            // Show a temporary status message in green
+            toolStripStatusLabelLock.Text = "Generated (copied)";
+            toolStripStatusLabelLock.BackColor = Color.LightGreen;
+            toolStripStatusLabelLock.ForeColor = Color.Black;
+
+            // Set up a timer to reset the status after a few seconds
+            var timer = new System.Windows.Forms.Timer();
+            timer.Interval = 2500; // 2.5 seconds, adjust to taste
+            timer.Tick += (s, ev) =>
+            {
+                timer.Stop();
+                timer.Dispose();
+                // Restore normal status (Locked/Unlocked + normal colors)
+                UpdateStatusBar();
+            };
+            timer.Start();
         }
 
         private void DeleteSelectedEntry()
@@ -850,6 +964,69 @@ namespace krypta
             {
                 _suppressAutoLock = false;
             }
+        }
+
+        private void dataGridView1_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            // Only respond to right-clicks on valid rows
+            if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+            {
+                dataGridView1.ClearSelection();
+                dataGridView1.CurrentCell = dataGridView1.Rows[e.RowIndex].Cells[e.ColumnIndex >= 0 ? e.ColumnIndex : 0];
+                dataGridView1.Rows[e.RowIndex].Selected = true;
+            }
+        }
+
+        private PasswordEntry GetSelectedEntry()
+        {
+            if (dataGridView1.CurrentRow == null || dataGridView1.CurrentRow.IsNewRow)
+                return null;
+
+            return dataGridView1.CurrentRow.DataBoundItem as PasswordEntry;
+        }
+
+        private void copyUsernameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var entry = GetSelectedEntry();
+            if (entry == null || string.IsNullOrEmpty(entry.Username))
+                return;
+
+            try
+            {
+                Clipboard.SetText(entry.Username);
+                toolStripStatusLabelLock.Text = "Username copied";
+            }
+            catch
+            {
+                // ignore clipboard issues
+            }
+        }
+
+        private void copyPasswordToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var entry = GetSelectedEntry();
+            if (entry == null || string.IsNullOrEmpty(entry.Password))
+                return;
+
+            try
+            {
+                Clipboard.SetText(entry.Password);
+                toolStripStatusLabelLock.Text = "Password copied";
+            }
+            catch
+            {
+                // ignore clipboard issues
+            }
+        }
+
+        private void generatePasswordToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GeneratePasswordForSelectedEntry();
+        }
+
+        private void deleteEntryToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DeleteSelectedEntry();
         }
     }
 }
